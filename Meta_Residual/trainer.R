@@ -7,8 +7,8 @@ nn    <- import("torch.nn")
 # ------------------------------------------------------------------
 # LOAD MODELS (IMPORTANT LINE)
 # ------------------------------------------------------------------
-source("models.R")   # makes py$TransformerNet, py$DeepSetsNet available
-source("data_prep.R")
+source("Meta_Residual/model.R")   # makes py$TransformerNet, py$DeepSetsNet available
+source("Meta_Residual/data_generator.R")
 
 model_trainer <- function(model, X_train, Y_train,
                           X_val = NULL, Y_val = NULL,
@@ -105,5 +105,42 @@ model_trainer <- function(model, X_train, Y_train,
 model_tf <- py$TransformerNet(in_dim=6L, out_dim=6L)
 model_ds <- py$DeepSetsNet(in_dim=6L, out_dim=6L)
 
-res_tf <- model_trainer(model_tf, X_tr, Y_tr, X_val, Y_val)
-res_ds <- model_trainer(model_ds, X_tr, Y_tr, X_val, Y_val)
+
+df <- generate_grid(n_repeats = 200, p = 5, L_range = 10:100, seed = 123)
+
+# Train/val split
+set.seed(1)
+n <- nrow(df)
+id <- sample.int(n)
+n_tr <- floor(0.8 * n)
+
+tr_id  <- id[1:n_tr]
+val_id <- id[(n_tr + 1):n]
+
+# Raw splits from generator (lists)
+X_tr_raw  <- df$sample[tr_id]   # list of matrices (Li x (p+1))
+Y_tr_raw  <- df$target[tr_id]   # list of numeric vectors (p+1)
+
+X_val_raw <- df$sample[val_id]
+Y_val_raw <- df$target[val_id]
+
+# Device (robust)
+device <- if (torch$cuda$is_available()) torch$device("cuda") else torch$device("cpu")
+
+# Convert X: list(matrices) -> list(torch tensors), each (Li x (p+1))
+to_list_of_tensors <- function(x_list, device) {
+  lapply(x_list, function(M) {
+    torch$tensor(M, dtype = torch$float32)$to(device)
+  })
+}
+
+X_tr  <- to_list_of_tensors(X_tr_raw, device)
+X_val <- to_list_of_tensors(X_val_raw, device)
+
+# Convert Y: list(vectors) -> matrix -> torch tensor (N x (p+1))
+Y_tr  <- torch$tensor(do.call(rbind, Y_tr_raw),  dtype = torch$float32)$to(device)
+Y_val <- torch$tensor(do.call(rbind, Y_val_raw), dtype = torch$float32)$to(device)
+
+
+res_tf <- model_trainer(model_tf, X_tr, Y_tr, X_val, Y_val, epochs = 10L)
+res_ds <- model_trainer(model_ds, X_tr, Y_tr, X_val, Y_val, epochs = 10L)

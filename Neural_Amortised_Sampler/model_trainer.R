@@ -8,8 +8,8 @@ library(dplyr)
 library(tidyr)
 library(viridis)
 
-source("data_generator.R")
-source("model.R")
+source("Neural_Amortised_Sampler/data_generator.R")
+source("Neural_Amortised_Sampler/model.R")
 
 use_condaenv("r-amortised", required = TRUE)
 

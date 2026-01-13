@@ -7,7 +7,7 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
-source("models.R")
+source("Meta_Residual/model.R")
 torch <- import("torch")
 
 device <- if (torch$cuda$is_available()) torch$device("cuda") else torch$device("cpu")
@@ -17,8 +17,10 @@ cat("Using device:", device$type, "\n")
 model_tf <- py$TransformerNet(in_dim=6L, out_dim=6L)$to(device)
 model_ds <- py$DeepSetsNet(in_dim=6L, out_dim=6L)$to(device)
 
-model_tf$load_state_dict(torch$load("results_r_fixed/tf_n400.pth", map_location=device))
-model_ds$load_state_dict(torch$load("results_r_fixed/ds_n500.pth", map_location=device))
+cat("Reloading weights...\n")
+model_tf$load_state_dict(torch$load("Meta_Residual/model_res_weights/tf_n400.pth", map_location = device))
+model_ds$load_state_dict(torch$load("Meta_Residual/model_res_weights/ds_n400.pth", map_location = device))
+cat("Weights loaded.\n")
 
 model_tf$eval()
 model_ds$eval()

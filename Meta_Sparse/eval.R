@@ -1,4 +1,20 @@
+library(reticulate)
 library(ggplot2)
+
+source("Meta_Sparse/model.R")
+torch <- import("torch")
+
+device <- if (torch$cuda$is_available()) "cuda" else "cpu"
+p <- 100L
+
+model <- py$TransformerNet(in_dim = as.integer(p + 1L),
+                           out_dim = as.integer(p))$to(device)
+
+state_dict <- torch$load("Meta_Sparse/checkpoints/model_epoch_200.pt",
+                         map_location = device)
+
+model$load_state_dict(state_dict)
+model$eval()
 
 sample_sizes <- c(50, 100, 200, 500, 1000)
 sparsity_levels <- c(5, 20, 50, 80)
@@ -83,5 +99,5 @@ plt <- ggplot(results, aes(x = SampleSize, y = AvgDeviation, color = Sparsity, g
   theme_minimal() +
   theme(legend.position = "bottom")
 
-print(plt)
+
 results

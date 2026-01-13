@@ -135,3 +135,45 @@ generate_grid <- function(
 # Example:
 # df <- generate_grid(n_repeats = 3, seed = 123)
 # str(df)
+
+
+# ------------------------------------------------------------------------------
+# Helper: sample_regression_batch()  (COMPATIBLE WITH YOUR make_task())
+# Returns a list: $sample (list of matrices) and $target (list of vectors)
+# ------------------------------------------------------------------------------
+
+sample_regression_batch <- function(
+    n_tasks = 200,
+    L_range = c(40, 60),
+    d = 5,
+    x_dist = "normal",
+    x_params = list(mean = 0, sd = 1),
+    noise_dist = "normal",
+    noise_params = list(sd = 0.1),
+    beta_sd = 9,
+    c_sd = 9,
+    seed = NULL
+) {
+  stopifnot(n_tasks >= 1, length(L_range) == 2, L_range[1] <= L_range[2])
+  if (!is.null(seed)) set.seed(seed)
+  
+  x_cfg    <- list(dist = x_dist,   params = x_params)
+  noise_cfg <- list(dist = noise_dist, params = noise_params)
+  
+  tasks <- vector("list", n_tasks)
+  for (i in seq_len(n_tasks)) {
+    L_i <- sample(seq.int(L_range[1], L_range[2]), size = 1)
+    tasks[[i]] <- make_task(
+      L = L_i, p = d,
+      x_cfg = x_cfg,
+      noise_cfg = noise_cfg,
+      beta_sd = beta_sd,
+      c_sd = c_sd
+    )
+  }
+  
+  list(
+    sample = lapply(tasks, `[[`, "sample"),
+    target = lapply(tasks, `[[`, "target")
+  )
+}

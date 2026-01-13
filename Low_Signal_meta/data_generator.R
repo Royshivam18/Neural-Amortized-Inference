@@ -3,8 +3,6 @@
 # ==============================================================================
 library(reticulate)
 
-use_condaenv("r-amortised", required = TRUE)
-torch <- import("torch")
 
 init_centroids <- function(K, p=20, tau=3.0, seed=1L, device=NULL) {
   if (!is.null(seed)) torch$manual_seed(as.integer(seed))

@@ -1,11 +1,7 @@
 library(reticulate)
 
-use_condaenv("r-amortised", required = TRUE)
-torch <- import("torch")
-nn <- torch$nn
-
-source("data_generator.R")
-source("model.R")
+source("Meta_Sparse/data_generator.R")
+source("Meta_Sparse/model.R")
 
 device <- if (torch$cuda$is_available()) "cuda" else "cpu"
 
